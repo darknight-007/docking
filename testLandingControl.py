@@ -31,6 +31,7 @@ class QuadController:
 
     def __init__(self):
         rospy.init_node('f450_velocity_controller', anonymous=True)
+        rospy.set_param("/mavros/conn/heartbeat_rate", '3.0');
         vel_pub = rospy.Publisher('/mavros/setpoint_velocity/cmd_vel', TwistStamped, queue_size=10)
         vel_sub = rospy.Subscriber('/mavros/local_position/velocity', TwistStamped, callback=self.vel_cb)
         pos_sub = rospy.Subscriber('/mavros/local_position/pose', PoseStamped, callback=self.pos_cb)
@@ -41,19 +42,22 @@ class QuadController:
         mode_srv = rospy.ServiceProxy("/mavros/set_mode", SetMode)
 
         rate = rospy.Rate(10)  # Hz
-        rate.sleep()
         
         lController = LandingController()
         lController.setTarget(self.target)
+        self.des_vel = lController.update(self.cur_pose, self.cur_vel)
+        # self.des_vel.twist.linear.x = 0
+        # self.des_vel.twist.linear.y = 0
+        for i in range(0,10):
+            vel_pub.publish(self.des_vel)
+            rate.sleep()
 
-        vel_pub.publish(self.des_vel)
         print "Setting Offboard Mode"
-        result = mode_srv(base_mode=0, custom_mode="OFFBOARD")
+        result = mode_srv(custom_mode="OFFBOARD")
         print result
         print "Arming"
         result = arming_srv(value=True)
         print result
-
 
 
         while not rospy.is_shutdown():
