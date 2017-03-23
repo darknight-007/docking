@@ -11,7 +11,9 @@ import numpy
 from geometry_msgs.msg import TwistStamped
 from VelocityController import VelocityController
 from LandingController import LandingController
-
+import random
+import numpy as np
+import time 
 
 class QuadController:
     cur_vel = TwistStamped()
@@ -22,6 +24,7 @@ class QuadController:
     cur_pose = PoseStamped()
 
     isReadyToFly = True
+
 
     target = Pose()
     target.position.x = 7
@@ -67,8 +70,14 @@ class QuadController:
                 if(lController.landed()):
                     print "Landed"
                     # DISARM
-                    result = arming_srv(value=False)
-                    break
+                    time.sleep(3)
+                    print "Taking off again"    
+                    self.target.position.x =  random.randint(-5,5)
+                    self.target.position.y =  random.randint(-5,5)
+                    self.target.position.z =  5
+                    landed = False
+                    lController.setTarget(self.target)
+                    #result = arming_srv(value=False)
             rate.sleep()
 
     def copy_vel(self, vel):
